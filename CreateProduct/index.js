@@ -1,16 +1,31 @@
 const createMongoClient = require('../shared/mongoClient');
 
 module.exports = async function (context, req) {
-    const product = req.body;
+    const product = req.body || {};
+
+    if (product) {
+        context.res = {
+            status: 400,
+            body: 'Product is required',
+        };
+    }
 
     const { client: MongoClient, closeConnectionFn } = await createMongoClient();
     const Products = MongoClient.collection('products');
 
-    const res = await Products.insert(product);
-    closeConnectionFn();
+    try {
+        const res = await Products.insert(product);
+        closeConnectionFn();
 
-    context.res = {
-        status: 201,
-        body: res
-    };
+        context.res = {
+            status: 201,
+            body: res
+        };
+
+    } catch (error) {
+        context.res = {
+            status: 500,
+            body: 'Error on insert product',
+        };
+    }
 }
